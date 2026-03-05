@@ -1,0 +1,243 @@
+/* Dashboard specific styles */
+.dashboard-container {
+    padding: 2rem 5%;
+    max-width: 1400px;
+    margin: 0 auto;
+    color: #333;
+}
+
+.welcome-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--primary-dark);
+}
+
+.welcome-header p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.stats-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #f0f0f0;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.stat-content .stat-label {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.stat-content .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111;
+}
+
+.storage-usage-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2.5rem;
+    border: 1px solid #f0f0f0;
+}
+
+.storage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.storage-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.storage-percentage {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.storage-bar-container {
+    height: 10px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.storage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 10px;
+    transition: width 0.5s ease-out;
+}
+
+.quick-actions-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-dark);
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.action-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+    transition: all 0.2s;
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    border-color: #ddd;
+}
+
+.action-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.action-details h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.action-details p {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.recent-activity-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.activity-header h2 {
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+}
+
+.view-all-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.activity-table-wrapper {
+    overflow-x: auto;
+}
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.activity-table th {
+    text-align: left;
+    padding: 1rem;
+    color: #888;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-table td {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid #f9f9f9;
+    font-size: 0.95rem;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-completed {
+    background: var(--secondary);
+    color: var(--primary-dark);
+}
+
+/* Icon Colors */
+.bg-blue-soft {
+    background: #e3f2fd;
+    color: #1e88e5;
+}
+
+.bg-teal-soft {
+    background: #e0f2f1;
+    color: #00897b;
+}
+
+.bg-purple-soft {
+    background: #f3e5f5;
+    color: #8e24aa;
+}
+
+.bg-orange-soft {
+    background: #fff3e0;
+    color: #fb8c00;
+}
