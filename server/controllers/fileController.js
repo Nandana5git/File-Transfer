@@ -88,23 +88,46 @@ exports.downloadFile = async (req, res) => {
       return res.status(404).json({ message: "File not found on server" });
     }
 
-    // Read encrypted file
-    const encryptedFile = fs.readFileSync(filePath);
+    // Read only the header to extract IV and authTag (without loading entire file)
+    const headerBuffer = Buffer.alloc(28); // 12 bytes IV + 16 bytes authTag
+    const fd = fs.openSync(filePath, 'r');
+    fs.readSync(fd, headerBuffer, 0, 28, 0);
+    fs.closeSync(fd);
 
-    // Extract IV (first 12  bytes)
-    const iv = encryptedFile.slice(0, 12);
-    const authTag = encryptedFile.slice(12, 28);
-    const encryptedData = encryptedFile.slice(28);
+    const iv = headerBuffer.slice(0, 12);
+    const authTag = headerBuffer.slice(12, 28);
 
-    // Decrypt
-    const decryptedData = decryptBuffer(encryptedData, iv, authTag);
+    // Import streaming decryption helper
+    const { createDecipherStream } = require("../utils/cryptoUtils");
+    const decipherStream = createDecipherStream(iv, authTag);
+
+    // Create file stream starting after header (skip first 28 bytes)
+    const fileStream = fs.createReadStream(filePath, { start: 28 });
 
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${file.original_name}"`
     );
+    res.setHeader("Content-Type", "application/octet-stream");
 
-    res.send(decryptedData);
+    // Stream: fileStream → decrypt → response
+    // Only small chunks in memory at a time, regardless of file size
+    fileStream.pipe(decipherStream).pipe(res);
+
+    // Error handling
+    fileStream.on("error", (err) => {
+      console.error("File stream error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Download error" });
+      }
+    });
+
+    decipherStream.on("error", (err) => {
+      console.error("Decryption error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Decryption error" });
+      }
+    });
 
   } catch (err) {
     console.error(err.message);

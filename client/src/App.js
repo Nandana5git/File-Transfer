@@ -12,6 +12,9 @@ import Upload from "./pages/Upload";
 import MyFiles from "./pages/MyFiles";
 import Receive from "./pages/Receive";
 import Settings from "./pages/Settings";
+import CreateVault from "./pages/CreateVault";
+import ReceiveVault from "./pages/ReceiveVault";
+import MyVaults from "./pages/MyVaults";
 
 function App() {
   return (
@@ -23,6 +26,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/my-files" element={<MyFiles />} />
         <Route path="/receive/:token" element={<Receive />} />
+        <Route path="/receive-vault/:token" element={<ReceiveVault />} />
 
 
         <Route
@@ -47,6 +51,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-vault"
+          element={
+            <ProtectedRoute>
+              <CreateVault />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-vaults"
+          element={
+            <ProtectedRoute>
+              <MyVaults />
             </ProtectedRoute>
           }
         />

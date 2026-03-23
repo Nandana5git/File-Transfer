@@ -13,7 +13,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 const uploadRoutes = require("./routes/uploadRoutes");
+const vaultRoutes = require("./routes/vaultRoutes");
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/vaults", vaultRoutes);
 
 
 

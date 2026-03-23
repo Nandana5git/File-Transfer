@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 
 function MyFiles() {
   const [files, setFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchFiles();
@@ -27,10 +30,43 @@ function MyFiles() {
     }
   };
 
+  const toggleFileSelection = (fileId) => {
+    setSelectedFiles(prev =>
+      prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+    );
+  };
+
+  const handleCreateVault = () => {
+    if (selectedFiles.length === 0) {
+      alert("Please select at least one file to create a vault.");
+      return;
+    }
+    // Pass selected file IDs to the create vault page
+    navigate("/create-vault", { state: { selectedFileIds: selectedFiles } });
+  };
+
   return (
     <div className="dashboard animate-fade-in">
-      <h2 className="animate-up">My Secured Files</h2>
-      <p className="text-muted mb-1 animate-up">Manage your encrypted uploads and track activity</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 className="animate-up">My Secured Files</h2>
+          <p className="text-muted mb-1 animate-up">Manage your encrypted uploads and track activity</p>
+        </div>
+        <button
+          className="btn animate-up"
+          onClick={handleCreateVault}
+          disabled={selectedFiles.length === 0}
+          style={{
+            padding: "4px 12px",
+            fontSize: "0.75rem",
+            borderRadius: "50px",
+            width: "fit-content",
+            whiteSpace: "nowrap"
+          }}
+        >
+          + Vault ({selectedFiles.length})
+        </button>
+      </div>
 
       {files.length === 0 ? (
         <div className="stats-box text-center animate-up">
@@ -41,6 +77,13 @@ function MyFiles() {
           <table className="file-list">
             <thead>
               <tr style={{ color: "var(--text-muted)", fontSize: "0.875rem", textAlign: "left" }}>
+                <th style={{ padding: "0 1.2rem 1rem" }}>
+                  <input
+                    type="checkbox"
+                    onChange={(e) => setSelectedFiles(e.target.checked ? files.map(f => f.id) : [])}
+                    checked={selectedFiles.length === files.length && files.length > 0}
+                  />
+                </th>
                 <th style={{ padding: "0 1.2rem 1rem" }}>File Name</th>
                 <th style={{ padding: "0 1.2rem 1rem" }}>Size</th>
                 <th style={{ padding: "0 1.2rem 1rem" }}>Uploaded</th>
@@ -59,8 +102,25 @@ function MyFiles() {
 
                 return (
                   <tr key={file.id} className="file-row" style={{ animationDelay: `${index * 0.05}s` }}>
+                    <td style={{ padding: "1.2rem" }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.includes(file.id)}
+                        onChange={() => toggleFileSelection(file.id)}
+                      />
+                    </td>
                     <td>
-                      <div style={{ fontWeight: "600", color: "var(--primary-dark)" }}>{file.original_name}</div>
+                      <div style={{ fontWeight: "600", color: "var(--primary-dark)" }}>
+                        {file.display_name || file.original_name}
+                      </div>
+                      {file.display_name && (
+                        <div className="small text-muted" style={{ fontSize: "0.75rem" }}>
+                          Original: {file.original_name}
+                        </div>
+                      )}
+                      {file.description && (
+                        <div className="small text-muted" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>{file.description}</div>
+                      )}
                       <div className="small text-muted" style={{ fontSize: "0.7rem", fontFamily: "monospace" }}>{file.checksum?.substring(0, 12)}...</div>
                     </td>
                     <td>{(file.size / 1024 / 1024).toFixed(2)} MB</td>

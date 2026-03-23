@@ -72,10 +72,20 @@ function Receive() {
                 <p className="text-muted mb-2">You have been sent a secure encrypted file</p>
 
                 <div className="file-info-box p-2 mb-2" style={{ backgroundColor: "var(--bg-light)", borderRadius: "8px" }}>
-                    <div className="font-bold mb-1" style={{ color: "var(--primary-dark)" }}>{file.original_name}</div>
+                    <div className="font-bold mb-1" style={{ color: "var(--primary-dark)" }}>
+                        {file.display_name || file.original_name}
+                    </div>
+                    {file.display_name && (
+                        <div className="small text-muted mb-1">Original: {file.original_name}</div>
+                    )}
                     <div className="small text-muted">Size: {(file.size / 1024 / 1024).toFixed(2)} MB</div>
                     {file.expiry_date && (
                         <div className="small text-muted">Expires: {new Date(file.expiry_date).toLocaleString()}</div>
+                    )}
+                    {file.description && (
+                        <div className="mt-1 p-1 small" style={{ borderTop: "1px solid #eee", fontStyle: "italic", color: "#555" }}>
+                            {file.description}
+                        </div>
                     )}
                 </div>
 

@@ -27,6 +27,8 @@ function Upload() {
   const [expiryDays, setExpiryDays] = useState(7);
   const [maxDownloads, setMaxDownloads] = useState("");
   const [receiverEmail, setReceiverEmail] = useState("");
+  const [description, setDescription] = useState("");
+  const [displayName, setDisplayName] = useState("");
 
   const uploadIdRef = useRef(null);
   const currentChunkRef = useRef(0);
@@ -67,7 +69,9 @@ function Upload() {
           expiryDate: expiryDate.toISOString(),
           password: password || null,
           maxDownloads: maxDownloads ? parseInt(maxDownloads) : null,
-          receiverEmail: receiverEmail || null
+          receiverEmail: receiverEmail || null,
+          description: description || null,
+          displayName: displayName || null
         });
 
         uploadId = initiateRes.data.uploadId;
@@ -186,7 +190,7 @@ function Upload() {
         localStorage.setItem("upload_chunk", index); // Strategy 3 persistence
 
         const completed = currentChunkRef.current + 1;
-        const percent = Math.floor((completed / totalChunksRef.current) * 100);
+        const percent = Math.floor((completed / totalChunksRef.current) * 100);//progress calculation
         setProgress(old => Math.max(old, percent));
         return; // Success
       } catch (error) {
@@ -272,13 +276,32 @@ function Upload() {
                   onChange={(e) => setMaxDownloads(e.target.value)}
                 />
               </div>
+              <div className="w-100">
+                <label className="text-muted small">Custom Filename / Title</label>
+                <input
+                  type="text"
+                  placeholder="Enter a custom title (optional)"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+              </div>
               <div>
-                <label className="text-muted small">Receiver Email</label>
+                <label className="text-muted small">Receiver Emails (comma separated)</label>
                 <input
                   type="email"
-                  placeholder="Notify receiver (optional)"
+                  multiple
+                  placeholder="e.g. a@b.com, c@d.com"
                   value={receiverEmail}
                   onChange={(e) => setReceiverEmail(e.target.value)}
+                />
+              </div>
+              <div className="w-100">
+                <label className="text-muted small">File Description</label>
+                <textarea
+                  placeholder="Add a brief description about the file (optional)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ddd", marginTop: "5px", minHeight: "80px" }}
                 />
               </div>
             </div>

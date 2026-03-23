@@ -35,7 +35,9 @@ exports.initiateUpload = async (req, res) => {
       password,
       maxDownloads,
       receiverEmail,
-      fileSize // Client should send this
+      fileSize, // Client should send this
+      description,
+      displayName
     } = req.body;
 
     // Check Storage Limit (50GB)
@@ -60,12 +62,12 @@ exports.initiateUpload = async (req, res) => {
     await pool.query(
       `INSERT INTO upload_sessions (
         id, user_id, original_name, total_chunks, uploaded_chunks, status, 
-        expiry_date, password_hash, max_downloads, receiver_email
+        expiry_date, password_hash, max_downloads, receiver_email, description, display_name
       )
-       VALUES ($1, $2, $3, $4, 0, 'pending', $5, $6, $7, $8)`,
+       VALUES ($1, $2, $3, $4, 0, 'pending', $5, $6, $7, $8, $9, $10)`,
       [
         uploadId, userId, originalName, totalChunks,
-        expiryDate || null, passwordHash, maxDownloads || null, receiverEmail || null
+        expiryDate || null, passwordHash, maxDownloads || null, receiverEmail || null, description || null, displayName || null
       ]
     );
 
@@ -203,13 +205,13 @@ const finalizeUpload = async (uploadId, userId, originalName) => {
     await pool.query(
       `INSERT INTO files (
         user_id, filename, original_name, size, checksum, status, 
-        expiry_date, password_hash, max_downloads, receiver_email, share_token
+        expiry_date, password_hash, max_downloads, receiver_email, share_token, description, display_name
       )
-       VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, $8, $9, $10)`,
+       VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, $8, $9, $10, $11, $12)`,
       [
         userId, finalFilename, originalName, stats.size, fileHash,
         session.expiry_date, session.password_hash, session.max_downloads,
-        session.receiver_email, shareToken
+        session.receiver_email, shareToken, session.description, session.display_name
       ]
     );
 
@@ -313,7 +315,7 @@ exports.getFileByToken = async (req, res) => {
     const { token } = req.params;
 
     const result = await pool.query(
-      `SELECT id, original_name, size, expiry_date, 
+      `SELECT id, original_name, size, expiry_date, description, display_name,
               password_hash IS NOT NULL as password_required,
               receiver_email IS NOT NULL as email_required
        FROM files 
@@ -372,7 +374,8 @@ exports.downloadByToken = async (req, res) => {
     // Check email requirement
     if (file.receiver_email) {
       if (!email) return res.status(401).json({ error: "Receiver email required" });
-      if (email.toLowerCase() !== file.receiver_email.toLowerCase()) {
+      const allowedEmails = file.receiver_email.split(',').map(e => e.trim().toLowerCase());
+      if (!allowedEmails.includes(email.toLowerCase())) {
         return res.status(403).json({ error: "Access denied: Email mismatch" });
       }
     }
@@ -453,8 +456,12 @@ exports.verifyDownload = async (req, res) => {
 
     // Auth check (only for share links)
     if (token) {
-      if (file.receiver_email && email?.toLowerCase() !== file.receiver_email.toLowerCase()) {
-        return res.status(403).json({ error: "Access denied: Email mismatch" });
+      if (file.receiver_email) {
+        if (!email) return res.status(401).json({ error: "Receiver email required" });
+        const allowedEmails = file.receiver_email.split(',').map(e => e.trim().toLowerCase());
+        if (!allowedEmails.includes(email.toLowerCase())) {
+          return res.status(403).json({ error: "Access denied: Email mismatch" });
+        }
       }
       if (file.password_hash) {
         if (!password) return res.status(401).json({ error: "Password required" });
@@ -598,7 +605,7 @@ exports.getUserFiles = async (req, res) => {
     const result = await pool.query(
       `SELECT id, filename, original_name, size, upload_date, 
               checksum, status, expiry_date, download_count, 
-              max_downloads, receiver_email, share_token
+              max_downloads, receiver_email, share_token, description, display_name
        FROM files 
        WHERE user_id = $1 
        ORDER BY upload_date DESC`,

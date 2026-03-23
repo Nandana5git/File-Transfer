@@ -26,6 +26,7 @@ function Navbar() {
             <Link to="/dashboard" className="nav-link">Dashboard</Link>
             <Link to="/upload" className="nav-link">Upload</Link>
             <Link to="/my-files" className="nav-link">My Files</Link>
+            <Link to="/my-vaults" className="nav-link">My Vaults</Link>
 
             <button className="nav-button" onClick={handleLogout}>
               Logout
