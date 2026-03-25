@@ -53,7 +53,7 @@ function ReceiveVault() {
 
     const handleDownload = (fileId, fileName) => {
         // Standard browser download
-        window.location.href = `http://localhost:5000/api/vaults/share/download/${vaultAccessToken}/${fileId}`;
+        window.location.href = `${import.meta.env.VITE_API_URL}/api/vaults/share/download/${vaultAccessToken}/${fileId}`;
     };
 
     if (loading) return <div className="container text-center py-4">Opening secure vault...</div>;
