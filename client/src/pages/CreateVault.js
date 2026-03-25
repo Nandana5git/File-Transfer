@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../services/api";
 
@@ -17,15 +17,7 @@ function CreateVault() {
     const [shareLink, setShareLink] = useState("");
     const [receiverEmail, setReceiverEmail] = useState("");
 
-    useEffect(() => {
-        if (selectedFileIds.length === 0) {
-            navigate("/my-files");
-            return;
-        }
-        fetchFileDetails();
-    }, [selectedFileIds]);
-
-    const fetchFileDetails = async () => {
+    const fetchFileDetails = useCallback(async () => {
         try {
             // We'll just fetch all files and filter them for now
             const res = await API.get("/uploads/my-files");
@@ -37,7 +29,15 @@ function CreateVault() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedFileIds]);
+
+    useEffect(() => {
+        if (selectedFileIds.length === 0) {
+            navigate("/my-files");
+            return;
+        }
+        fetchFileDetails();
+    }, [selectedFileIds, fetchFileDetails, navigate]);
 
     const handleCreateVault = async () => {
         if (!vaultName) {

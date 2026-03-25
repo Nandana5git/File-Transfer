@@ -58,7 +58,6 @@ function Dashboard() {
     return Math.floor(seconds) + " seconds ago";
   };
 
-  const usedGB = (stats.usedStorage / 1024 / 1024 / 1024).toFixed(2);
   const totalGB = (stats.totalStorage / 1024 / 1024 / 1024).toFixed(0);
   const percentage = Math.min((stats.usedStorage / stats.totalStorage) * 100, 100);
 

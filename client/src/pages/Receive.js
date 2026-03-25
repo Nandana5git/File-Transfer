@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import API from "../services/api";
 
@@ -11,11 +11,7 @@ function Receive() {
     const [email, setEmail] = useState("");
     const [downloading, setDownloading] = useState(false);
 
-    useEffect(() => {
-        fetchFileInfo();
-    }, [token]);
-
-    const fetchFileInfo = async () => {
+    const fetchFileInfo = useCallback(async () => {
         try {
             const res = await API.get(`/uploads/share/${token}`);
             setFile(res.data);
@@ -25,7 +21,11 @@ function Receive() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [token]);
+
+    useEffect(() => {
+        fetchFileInfo();
+    }, [fetchFileInfo]);
 
     const handleDownload = async () => {
         try {

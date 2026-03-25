@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import API from "../services/api";
 
@@ -13,27 +13,7 @@ function ReceiveVault() {
     const [verifying, setVerifying] = useState(false);
     const [email, setEmail] = useState("");
 
-    useEffect(() => {
-        fetchVaultInfo();
-    }, [token]);
-
-    const fetchVaultInfo = async () => {
-        try {
-            const res = await API.get(`/vaults/share/${token}`);
-            setVault(res.data);
-            if (!res.data.password_required && !res.data.email_required) {
-                // If no password and no email, we still need an access token
-                handleVerify("", "");
-            }
-        } catch (err) {
-            console.error(err);
-            setError(err.response?.data?.error || "Vault not found or expired");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleVerify = async (providedPassword) => {
+    const handleVerify = useCallback(async (providedPassword) => {
         try {
             setVerifying(true);
             const res = await API.post(`/vaults/share/verify/${token}`, {
@@ -49,7 +29,27 @@ function ReceiveVault() {
         } finally {
             setVerifying(false);
         }
-    };
+    }, [token, password, email]);
+
+    const fetchVaultInfo = useCallback(async () => {
+        try {
+            const res = await API.get(`/vaults/share/${token}`);
+            setVault(res.data);
+            if (!res.data.password_required && !res.data.email_required) {
+                // If no password and no email, we still need an access token
+                handleVerify("", "");
+            }
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.error || "Vault not found or expired");
+        } finally {
+            setLoading(false);
+        }
+    }, [token, handleVerify]);
+
+    useEffect(() => {
+        fetchVaultInfo();
+    }, [fetchVaultInfo]);
 
     const handleDownload = (fileId, fileName) => {
         // Standard browser download
