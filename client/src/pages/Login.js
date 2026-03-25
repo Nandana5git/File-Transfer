@@ -38,19 +38,30 @@ function Login() {
         <p className="mb-1 text-muted">Please enter your details to login</p>
 
         <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            placeholder="Email Address"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div className="form-group mb-4">
+            <label>Email Address</label>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="form-group mb-4">
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <div style={{ textAlign: "right", marginTop: "4px" }}>
+              <a href="/forgot-password" style={{ fontSize: "0.8rem", color: "var(--primary)" }}>Forgot Password?</a>
+            </div>
+          </div>
 
           <button type="submit" className="btn">
             Sign In

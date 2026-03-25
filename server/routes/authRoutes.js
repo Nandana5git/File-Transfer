@@ -11,4 +11,11 @@ router.get("/profile", authenticateToken, authController.getProfile);
 router.put("/profile", authenticateToken, authController.updateProfile);
 router.put("/change-password", authenticateToken, authController.changePassword);
 
+// Password Reset (Public)
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
+
+// Account Management
+router.delete("/account", authenticateToken, authController.deleteAccount);
+
 module.exports = router;

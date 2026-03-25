@@ -9,6 +9,11 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { pipeline } = require("stream/promises");
+const sgMail = require("@sendgrid/mail");
+
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 const TEMP_DIR = path.join(__dirname, "../uploads/temp");
 const UPLOADS_DIR = path.join(__dirname, "../uploads");
@@ -221,6 +226,30 @@ const finalizeUpload = async (uploadId, userId, originalName) => {
       [uploadId]
     );
 
+    // 9. Send Email Notification
+    if (session.receiver_email && process.env.SENDGRID_API_KEY) {
+      const shareLink = `${process.env.CLIENT_URL || "http://localhost:3000"}/receive/${shareToken}`;
+      const msg = {
+        to: session.receiver_email,
+        from: process.env.EMAIL_FROM || "noreply@securetransfer.com",
+        subject: "A file has been shared with you - SecureTransfer",
+        text: `Hello,\n\nA file "${session.display_name || originalName}" has been shared with you via SecureTransfer.\n\nYou can access it here: ${shareLink}\n\n${session.password_hash ? "Note: This file is password protected. Please contact the sender for the password." : "No password is required for this file."}\n\nThis link will expire on: ${session.expiry_date ? new Date(session.expiry_date).toLocaleString() : "Never"}.\n\nBest,\nSecureTransfer Team`,
+        html: `<h3>Hello,</h3>
+                   <p>A file <strong>"${session.display_name || originalName}"</strong> has been shared with you via SecureTransfer.</p>
+                   <p>You can access it here: <a href="${shareLink}">${shareLink}</a></p>
+                   <p>${session.password_hash ? "<strong>Note:</strong> This file is password protected. Please contact the sender for the password." : "No password is required for this file."}</p>
+                   <p>This link will expire on: <strong>${session.expiry_date ? new Date(session.expiry_date).toLocaleString() : "Never"}</strong>.</p>
+                   <p>Best,<br>SecureTransfer Team</p>`,
+      };
+
+      try {
+        await sgMail.send(msg);
+        console.log(`Notification email sent to ${session.receiver_email} for file ${uploadId}`);
+      } catch (emailErr) {
+        console.error("FAILED TO SEND UPLOAD NOTIFICATION EMAIL:", emailErr);
+      }
+    }
+
   } catch (err) {
     console.error("FINALIZE UPLOAD ERROR:", err);
     if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
@@ -279,7 +308,7 @@ exports.getDashboardStats = async (req, res) => {
 
     const statsResult = await pool.query(
       `SELECT 
-        COALESCE(SUM(size), 0) as used_storage,
+        COALESCE(SUM(size) FILTER (WHERE expiry_date > NOW() OR expiry_date IS NULL), 0) as used_storage,
         COUNT(*) as total_files,
         COUNT(*) FILTER (WHERE expiry_date > NOW() OR expiry_date IS NULL) as active_files,
         COUNT(*) FILTER (WHERE expiry_date <= NOW()) as expired_files,
@@ -315,7 +344,7 @@ exports.getFileByToken = async (req, res) => {
     const { token } = req.params;
 
     const result = await pool.query(
-      `SELECT id, original_name, size, expiry_date, description, display_name,
+      `SELECT id, filename, original_name, size, expiry_date, description, display_name,
               password_hash IS NOT NULL as password_required,
               receiver_email IS NOT NULL as email_required
        FROM files 
@@ -332,6 +361,10 @@ exports.getFileByToken = async (req, res) => {
     // Check expiry
     if (file.expiry_date && new Date(file.expiry_date) <= new Date()) {
       return res.status(410).json({ error: "This link has expired" });
+    }
+
+    if (!file.filename) {
+      return res.status(410).json({ error: "File storage has been cleared due to expiry" });
     }
 
     res.json(file);
@@ -364,6 +397,10 @@ exports.downloadByToken = async (req, res) => {
     // Check expiry
     if (file.expiry_date && new Date(file.expiry_date) <= new Date()) {
       return res.status(410).json({ error: "File has expired" });
+    }
+
+    if (!file.filename) {
+      return res.status(410).json({ error: "File storage has been cleared due to expiry" });
     }
 
     // Check max downloads
@@ -454,6 +491,10 @@ exports.verifyDownload = async (req, res) => {
       return res.status(410).json({ error: "File has expired" });
     }
 
+    if (!file.filename) {
+      return res.status(410).json({ error: "File storage has been cleared due to expiry" });
+    }
+
     // Auth check (only for share links)
     if (token) {
       if (file.receiver_email) {
@@ -501,6 +542,10 @@ exports.streamFile = async (req, res) => {
     const result = await pool.query("SELECT * FROM files WHERE id = $1", [fileId]);
     if (result.rows.length === 0) return res.status(404).send("File not found");
     const file = result.rows[0];
+
+    if (!file.filename) {
+      return res.status(410).send("File storage has been cleared due to expiry");
+    }
 
     const filePath = path.join(UPLOADS_DIR, file.filename);
     const stats = fs.statSync(filePath);
@@ -580,6 +625,10 @@ exports.downloadFile = async (req, res) => {
     res.setHeader("Content-Type", "application/octet-stream");
 
     // 5. Pipe: FileStream (middle part) -> Decipher -> Response
+    if (!fileInfo.filename) {
+      return res.status(410).json({ error: "File storage has been cleared due to expiry" });
+    }
+
     const readStream = fs.createReadStream(filePath, {
       start: ivLength,
       end: stats.size - tagLength - 1
@@ -677,5 +726,35 @@ exports.cleanupAbandonedSessions = async () => {
     }
   } catch (err) {
     console.error("CLEANUP ERROR:", err);
+  }
+};
+
+// ==========================
+// Cleanup Expired Files (Delete from Disk)
+// ==========================
+exports.cleanupExpiredFiles = async () => {
+  try {
+    console.log("Running expired file cleanup...");
+    const result = await pool.query(
+      "SELECT id, filename FROM files WHERE expiry_date <= NOW() AND filename IS NOT NULL"
+    );
+
+    for (const file of result.rows) {
+      const filePath = path.join(UPLOADS_DIR, file.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Deleted expired file: ${file.filename}`);
+      }
+
+      await pool.query(
+        "UPDATE files SET filename = NULL, status = 'expired' WHERE id = $1",
+        [file.id]
+      );
+    }
+    if (result.rows.length > 0) {
+      console.log(`Cleanup complete. Removed ${result.rows.length} files.`);
+    }
+  } catch (err) {
+    console.error("EXPIRED FILE CLEANUP ERROR:", err);
   }
 };

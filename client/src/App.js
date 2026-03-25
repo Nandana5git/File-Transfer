@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Home from "./pages/Home";
@@ -15,6 +16,8 @@ import Settings from "./pages/Settings";
 import CreateVault from "./pages/CreateVault";
 import ReceiveVault from "./pages/ReceiveVault";
 import MyVaults from "./pages/MyVaults";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -27,6 +30,8 @@ function App() {
         <Route path="/my-files" element={<MyFiles />} />
         <Route path="/receive/:token" element={<Receive />} />
         <Route path="/receive-vault/:token" element={<ReceiveVault />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
 
         <Route
@@ -71,6 +76,7 @@ function App() {
           }
         />
       </Routes>
+      <Footer />
     </Router>
   );
 }

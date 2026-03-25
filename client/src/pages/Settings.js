@@ -73,6 +73,23 @@ function Settings() {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        const confirmed = window.confirm(
+            "Are you absolutely sure you want to delete your account? This action is permanent and will delete all your files and vaults forever."
+        );
+
+        if (confirmed) {
+            try {
+                await API.delete("/auth/account");
+                localStorage.removeItem("token");
+                window.location.href = "/";
+            } catch (err) {
+                const msg = err.response?.data?.message || "Failed to delete account";
+                setPassStatus({ type: "error", message: msg });
+            }
+        }
+    };
+
     if (loading) return <div className="container" style={{ textAlign: "center", padding: "4rem" }}>Loading settings...</div>;
 
     return (
@@ -164,6 +181,22 @@ function Settings() {
                     </div>
                     <button type="submit" className="settings-btn">Change Password</button>
                 </form>
+            </div>
+
+            {/* Account Deletion */}
+            <div className="settings-section animate-up" style={{ animationDelay: "0.2s", borderTop: "1px solid #e5e7eb", marginTop: "2rem" }}>
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--primary)", marginRight: "10px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Delete Account
+                </h2>
+                <p className="text-muted small mb-3">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                <button
+                    onClick={handleDeleteAccount}
+                    className="settings-btn"
+                    style={{ background: "#cb2533ff", borderColor: "#4b5563" }}
+                >
+                    Delete My Account
+                </button>
             </div>
         </div>
     );

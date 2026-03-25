@@ -27,4 +27,21 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  // Periodic Cleanups
+  const uploadController = require("./controllers/uploadController");
+
+  // Cleanup abandoned upload sessions every 6 hours
+  setInterval(() => {
+    uploadController.cleanupAbandonedSessions();
+  }, 6 * 60 * 60 * 1000);
+
+  // Cleanup expired files every hour
+  setInterval(() => {
+    uploadController.cleanupExpiredFiles();
+  }, 1 * 60 * 60 * 1000);
+
+  // Run once on startup
+  uploadController.cleanupAbandonedSessions();
+  uploadController.cleanupExpiredFiles();
 });

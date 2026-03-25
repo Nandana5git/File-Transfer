@@ -89,8 +89,8 @@ function Dashboard() {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
           </div>
           <div className="stat-content">
-            <div className="stat-label">Storage Used</div>
-            <div className="stat-value">{usedGB} GB <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 400 }}>/ {totalGB} GB</span></div>
+            <div className="stat-label">Storage Used (Active)</div>
+            <div className="stat-value">{formatSize(stats.usedStorage)} <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 400 }}>/ {totalGB} GB</span></div>
           </div>
         </div>
 
@@ -120,9 +120,9 @@ function Dashboard() {
       <div className="storage-usage-section animate-up" style={{ animationDelay: "0.4s" }}>
         <div className="storage-header">
           <h3>Storage Usage</h3>
-          <span className="storage-percentage">{percentage.toFixed(0)}%</span>
+          <span className="storage-percentage">{percentage.toFixed(1)}%</span>
         </div>
-        <p className="text-muted small mb-1">{usedGB} GB of {totalGB} GB used</p>
+        <p className="text-muted small mb-1">{formatSize(stats.usedStorage)} of {totalGB} GB used</p>
         <div className="storage-bar-container">
           <div className="storage-bar-fill" style={{ width: `${percentage}%` }}></div>
         </div>

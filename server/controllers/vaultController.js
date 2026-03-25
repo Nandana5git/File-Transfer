@@ -4,6 +4,11 @@ const bcrypt = require("bcrypt");
 const path = require("path");
 const fs = require("fs");
 const { pipeline } = require("stream/promises");
+const sgMail = require("@sendgrid/mail");
+
+if (process.env.SENDGRID_API_KEY) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 const UPLOADS_DIR = path.join(__dirname, "../uploads");
 
@@ -37,6 +42,31 @@ exports.createVault = async (req, res) => {
             pool.query("INSERT INTO vault_files (vault_id, file_id) VALUES ($1, $2)", [vaultId, fileId])
         );
         await Promise.all(fileLinkPromises);
+
+        // 4. Send Email Notification
+        if (receiverEmail && process.env.SENDGRID_API_KEY) {
+            const vaultLink = `${process.env.CLIENT_URL || "http://localhost:3000"}/receive-vault/${shareToken}`;
+            const msg = {
+                to: receiverEmail,
+                from: process.env.EMAIL_FROM || "noreply@securetransfer.com",
+                subject: `You've been invited to a secure vault: ${name} - SecureTransfer`,
+                text: `Hello,\n\nYou have been invited to a secure vault "${name}" via SecureTransfer.\n\nDescription: ${description || "No description provided."}\n\nYou can access the vault here: ${vaultLink}\n\n${password ? "Note: This vault is password protected. Please contact the sender for the password." : "No password is required for this vault."}\n\nThis vault will expire on: ${expiryDate ? new Date(expiryDate).toLocaleString() : "Never"}.\n\nBest,\nSecureTransfer Team`,
+                html: `<h3>Hello,</h3>
+                       <p>You have been invited to a secure vault <strong>"${name}"</strong> via SecureTransfer.</p>
+                       <p><strong>Description:</strong> ${description || "No description provided."}</p>
+                       <p>You can access the vault here: <a href="${vaultLink}">${vaultLink}</a></p>
+                       <p>${password ? "<strong>Note:</strong> This vault is password protected. Please contact the sender for the password." : "No password is required for this vault."}</p>
+                       <p>This vault will expire on: <strong>${expiryDate ? new Date(expiryDate).toLocaleString() : "Never"}</strong>.</p>
+                       <p>Best,<br>SecureTransfer Team</p>`,
+            };
+
+            try {
+                await sgMail.send(msg);
+                console.log(`Notification email sent to ${receiverEmail} for vault ${vaultId}`);
+            } catch (emailErr) {
+                console.error("FAILED TO SEND VAULT NOTIFICATION EMAIL:", emailErr);
+            }
+        }
 
         res.status(201).json({ vaultId, shareToken });
 
@@ -164,6 +194,7 @@ exports.downloadVaultFile = async (req, res) => {
         const decipher = createDecipherStream(iv, authTag);
 
         await pool.query("UPDATE files SET download_count = download_count + 1 WHERE id = $1", [file.id]);
+        await pool.query("UPDATE vaults SET download_count = download_count + 1 WHERE id = $1", [session.vaultId]);
 
         res.setHeader("Content-Disposition", `attachment; filename="${file.original_name}"`);
         res.setHeader("Content-Type", "application/octet-stream");
@@ -183,7 +214,7 @@ exports.getUserVaults = async (req, res) => {
         const userId = req.user.userId;
 
         const result = await pool.query(
-            `SELECT id, name, description, created_at, expiry_date, share_token
+            `SELECT id, name, description, created_at, expiry_date, share_token, download_count
        FROM vaults 
        WHERE user_id = $1 
        ORDER BY created_at DESC`,
@@ -195,5 +226,31 @@ exports.getUserVaults = async (req, res) => {
     } catch (err) {
         console.error("GET USER VAULTS ERROR:", err);
         res.status(500).json({ error: "Failed to fetch vaults" });
+    }
+};
+
+// Delete Vault
+exports.deleteVault = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { id } = req.params;
+
+        // Verify vault belongs to user
+        const vaultCheck = await pool.query("SELECT * FROM vaults WHERE id = $1 AND user_id = $2", [id, userId]);
+        if (vaultCheck.rows.length === 0) {
+            return res.status(404).json({ error: "Vault not found or unauthorized" });
+        }
+
+        // Delete associations first (if not cascading)
+        await pool.query("DELETE FROM vault_files WHERE vault_id = $1", [id]);
+
+        // Delete vault
+        await pool.query("DELETE FROM vaults WHERE id = $1", [id]);
+
+        res.json({ message: "Vault deleted successfully" });
+
+    } catch (err) {
+        console.error("DELETE VAULT ERROR:", err);
+        res.status(500).json({ error: "Failed to delete vault" });
     }
 };

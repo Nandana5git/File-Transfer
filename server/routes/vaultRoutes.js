@@ -18,4 +18,7 @@ router.get("/share/download/:vaultAccessToken/:fileId", vaultController.download
 // Private: List user's vaults
 router.get("/my-vaults", authenticateToken, vaultController.getUserVaults);
 
+// Private: Delete a vault
+router.delete("/:id", authenticateToken, vaultController.deleteVault);
+
 module.exports = router;
