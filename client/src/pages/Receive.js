@@ -47,7 +47,7 @@ function Receive() {
 
             // 2. Use window.location.href to trigger a native browser download
             // This bypasses blob buffering and works for any file size
-            window.location.href = `${import.meta.env.VITE_API_URL}/api/uploads/share/stream/${streamToken}`;
+            window.location.href = `${process.env.REACT_APP_API_URL}/api/uploads/share/stream/${streamToken}`;
 
             // Small delay to reset UI
             setTimeout(() => {
